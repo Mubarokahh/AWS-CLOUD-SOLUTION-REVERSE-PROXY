@@ -2,4 +2,4 @@
 
 * I created a VPC named "mbarokah" as an isolated network environment 
 
-![image] (image.png)
+/Users/mubarokah/AWS-CLOUD-SOLUTION-REVERSE-PROXY/Images/vpc settings.png
