@@ -34,49 +34,109 @@
      * The purpose of this is to be able to route the subnets in these group to the internet.
      * These action is not done for the Private RT.
 
-      ![Public-RT](Images/Public-RT.JPG)
+  ![Public-RT](Images/Public-RT.JPG)
 
-      ## CREATE ELASTIC IP ADDRESSES
+  ## CREATE ELASTIC IP ADDRESSES
 
-      * I created 3 Elastic IPS .
+  * I created 3 Elastic IPS .
       
-     ![Elastic-IP](Images/Elastic-IP.JPG)
+   ![Elastic-IP](Images/Elastic-IP.JPG)
       
-      ## CREATE NAT GATEWAY
+ ## CREATE NAT GATEWAY
 
-      * I configured a NAT Gateway for connectivity to the internet
-      * An elastic IP address was attached to this NAT Gateway at creation.
-      * One of the public Subnets created earlier was also attached.
+ * I configured a NAT Gateway for connectivity to the internet
+ * An elastic IP address was attached to this NAT Gateway at creation.
+ * One of the public Subnets created earlier was also attached.
 
-       ![NAT](Images/NAT.JPG)
+    ![NAT](Images/NAT.JPG)
 
-       ## CREATE SECURITY GROUP
-        ## 1. Nginx Server
-        * Traffic will only be allowed from external load balancer from port 80 and 443 
-        * It will allow SSH access from our Bastion
+     ## CREATE SECURITY GROUP
+     ## 1. Nginx Server
+     * Traffic will only be allowed from external load balancer from port 80 and 443 
+      * It will allow SSH access from our Bastion
 
        
-        ![NginxSG](Images/NginxSG.JPG)
+  ![NginxSG](Images/Nginx-SG.JPG)
 
-        ## 2. External Application Load Balancer
-        * ALB will be available from the internet
-        * This will allow traffic from any IP addreas
-
-**
-         ![External-lb](Images/External-lb.JPG)
+ ## 2. External Application Load Balancer
+    * ALB will be available from the internet
+    * This will allow traffic from any IP addreas
+    * Open port 80 and 443 from 0.0.0.0/0
 
 
- **
-           ![External-SG](Images/External-SG.JPG)
-
-  ![]()
-
-  ![]()
-
-  ![]()
+   ![External-lb](Images/External-lb.JPG)
 
 
-  ![]()
+ 
+   ![External-SG](Images/External-SG.JPG)
+
+   ## 3. Bastion Server
+
+     * I onfigured the security group to allow SSH (Port 22) from my IP address only.         
+    
+   ![Bastion-SG](Images/Bastion-SG.JPG)
+  
+     ## 4. Internal Load Balancer
+
+   * I configures this security gruop to only allow traffic from the nginx server.
+   * Allowing Port 80/443 access from Nginx sg
+
+   ![Internal-SG.](Images/Internal-SG.JPG)
+
+   ![Internal-SG2.](Images/Internal-SG2.JPG)
+
+  ## 5. Data-Layer Security Groups
+                 
+   This layer comprises of two segments and was configured accordingly.
+
+  ## a. Relational Database Server
+
+   * Only traffic from webservers and bastion servers were alllowed in this layer.
+        
+## b. Elastic File System (EFS)
+
+     * Nginx and Webservers will have access to EFS Mountpoint
+
+   ![Database-SG](Images/Database-SG.JPEG)
+   ![Database-SG2](Images/Database-SG2.JPG)
+
+   
+![]()
+![]()
+![]()
+![]()
+![]()
+![]()
+![]()
+
+![]()
+![]()![]()
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+![]() 
+
+
+
+
+
 
 
 
