@@ -1,4 +1,6 @@
-# SET UP VPC
+  ## SECTION 1- CONFIGURATION OF THE NETWORK SERVICES 
+
+ ## SET UP VPC
 
 * I created a VPC named "mbarokah" as an isolated network environment 
 ## Note
@@ -50,6 +52,8 @@
 
     ![NAT](Images/NAT.JPG)
 
+    ## SECTION 2 - SET UP OF THE SECURITY 
+
      ## CREATE SECURITY GROUP
      ## 1. Nginx Server
      * Traffic will only be allowed from external load balancer from port 80 and 443 
@@ -100,8 +104,58 @@
    ![Database-SG](Images/Database-SG.JPEG)
    ![Database-SG2](Images/Database-SG2.JPG)
 
+ ## Section 3 - TLS Certificates From Amazon Certificate Manager (ACM)
+    * The TLS certificate is needed to handle secured connectivity to the application laodbalancer
+    * I navigated to Amazon certificate manager 
+    * I requested a public certificate 'mbarokah.website' 
+    * Validate the certificate
+
+   ![AWS-ACM](Images/AWS-ACM.JPG)
+
+   ## Section 4 - Configuring Elastic File System
+
+   * I created a file system within the vpc
+
+   [Network Access]
+   * For network access ,I customized mount targets which are  webservers in private subnet 1 and private subnet 2 in 2 availability zones.The mount target needs to be in the same subnet as the resource that needs to access it
+   ![/Mount-Target.](Images/Mount-Target.JPG)
+
+    [Access point]
+      * On the EFS setup, created two access points for both tooling and wordpress applications
+
+   ![Aceess-Point](Images/Aceess-Point.JPG)
+
+  ## RDS SET-UP
+
+    [CREATE KMS KEY]
+
+  * I created a Key Management System key that will be used to encrypt the database
+
+    [CREATE SUBNET GROUP]
+
+  * Created a subnet group and added 2 private subnets (data Layer)
+   ![RDS-Subnet](Images/RDS-Subnet.JPG) 
+
+    [CREATE DATABSAE]
+   * creation method: Standard create
+
+   * Engine options: MySQL
+
+   * Edition: MySQL Community
+
+   * Version: 8.0.28
+
+   ![RDS](Images/RDS.JPG)
+
+ ## Section 5 - Configuring Compute Resources
+  
+  [CREATE AMI]
+  I spinned up 3 Red-hat based instances.[Nginx] [Bastion] [Webservers]
+
+
    
 ![]()
+
 ![]()
 ![]()
 ![]()
