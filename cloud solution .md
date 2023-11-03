@@ -152,13 +152,162 @@
   [CREATE AMI]
   I spinned up 3 Red-hat based instances.[Nginx] [Bastion] [Webservers]
 
+   [NGINX AMI INSTALL]
+
+   yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+   yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+   yum install wget vim python3 telnet htop git mysql net-tools chrony -y
+
+   systemctl start chronyd
+
+   systemctl enable chronyd
+
+   * Configure selinux policies for the nginx server
+   
+    setsebool -P httpd_can_network_connect=1
+    setsebool -P httpd_can_network_connect_db=1
+    setsebool -P httpd_execmem=1
+    setsebool -P httpd_use_nfs 1
+
+   * Install  amazon efs utils for mounting the target on the Elastic file system
+
+     git clone https://github.com/aws/efs-utils
+
+     cd efs-utils
+
+     yum install -y make
+ 
+     yum install -y rpm-build
+
+     make rpm
+
+     yum install -y ./build/amazon-efs-utils*rpm
+
+     [Certificate for nginx]
+
+      sudo mkdir /etc/ssl/private
+
+      sudo chmod 700 /etc/ssl/private
+
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/ACS.key -out /etc/ssl/certs/ACS.crt
+
+      sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+
+      [BASTION]
+
+      yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+      yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+      yum install wget vim python3 telnet htop git mysql net-tools chrony -y
+
+      systemctl start chronyd
+
+      systemctl enable chronyd
+
+
+
+      [WEBSERVER INSTALL]
+
+      yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+      yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+       yum install wget vim python3 telnet htop git mysql net-tools chrony -y
+
+       systemctl start chronyd
+
+       systemctl enable chronyd
+
+         * Install  amazon efs utils for mounting the target on the Elastic file system
+
+       git clone https://github.com/aws/efs-utils
+
+        cd efs-utils
+
+        yum install -y make
+ 
+        yum install -y rpm-build
+  
+         make rpm
+
+         yum install -y ./build/amazon-efs-utils*rpm
+
+         * Self Assigned Certificate for Webserver
+
+         yum install -y mod_ssl
+
+        openssl req -newkey rsa:2048 -nodes -keyout /etc/pki/tls/private/ACS.key -x509 -days 365 -out /etc/pki/tls/certs/ACS.crt
+
+         vi /etc/httpd/conf.d/ssl.conf
+
+         * In the sssl.conf, i edited the localhost.crt and localhost.key to ACS.crt and ACS.key respectively
+ 
+
+   [BASTION CONFIGURATION]
 
    
-![]()
+   yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
-![]()
-![]()
-![]()
+   yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+   yum install wget vim python3 telnet htop git mysql net-tools chrony -y
+
+   systemctl start chronyd
+
+   systemctl enable chronyd
+
+       ## SECTION 6 - Create AMI's from the instances
+
+      * I created AMI for each of thr instances
+   
+ ![Nginx-AMI](Images/Nginx-AMI.JPG)
+
+        ## SECTION 7 - Create Target Group
+
+     Created traget groups Nginx and the servers behind the loadbalance [Tooling and Wordpress]
+     * Below is the configuration.
+      -- Target Type: Instance   
+
+     -- Port https 443
+
+     -- Protocol version http1
+
+     -- Healthcheck path: /healthstatus
+
+     -- Tag: acme-tooling-target -- Next
+
+  ![TargetGroup.](Images/TargetGroup.JPG)
+
+   ## SECTION 7 - CONFIGURE APPLICATION LOAD BALANCER (ALB)
+
+   Nginx EC2 Instances will have configurations that accepts incoming traffic only from Load Balancers. No request should go directly to Nginx servers. With this kind of setup, we will benefit from intelligent routing of requests from the ALB to Nginx servers across the 2 Availability Zones. We will also be able to offload SSL/TLS certificates on the ALB instead of Nginx. Therefore, Nginx will be able to perform faster since it will not require extra compute resources to valifate certificates for every request.
+
+   * Created Internal Application Loadbalancer
+
+     - listens on HTTPS protocol (TCP port 443)
+     - created within the appropriate VPC | AZ | Subnets
+     - Choosing the Certificate already created from ACM
+     - Selected Security Group for the internal load balancer
+     - Selected wordpress Instance as the target group
+
+
+   ![INTERNAL-ALB.](Images/iNTERNAL-ALB.JPG)
+   * Created External[Internet-Facing] Application Loadbalancer
+
+     - listens on HTTPS protocol (TCP port 443)
+     - created within the appropriate VPC | AZ | Subnets
+     - Choosing the Certificate already created from ACM
+     - Selected Security Group for the external load balancer
+     - Selected Nginx Instances as the target group
+
+     ![EXTERNAL-ALB.](Images/EXTERNAL-ALB.JPG)
+
+     * Route traffic coming from the nginx server into the internal loadbalancer by sending traffic to the respective target group based on the url being requested by the user.This should be done for both tooling and wordpress servers.
+
+         ![Listenerrule](Images/Listenerrule.JPG)
 ![]()
 ![]()
 ![]()
