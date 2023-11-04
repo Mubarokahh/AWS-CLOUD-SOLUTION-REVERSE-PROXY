@@ -16,6 +16,7 @@
  * These subnets will exist within 2 avaialbiltiy zones [A and B]. That is, 3 subnets in each availabilty zone.
  * 10.0.0.0/16 CIDR consists of 65,536 IP V4 addresses [2^(32-x)]. Where x=cidr notation.
  * I randomly picked 6 IPV4 addresses within the 10.0.0.0/16 CIDR block.
+ * 
   ![Subnets](Images/Subnets.JPG)
 
   ## CREATE ROUTE TABLES FOR THE SUBNETS
@@ -38,13 +39,13 @@
 
   ![Public-RT](Images/Public-RT.JPG)
 
-  ## CREATE ELASTIC IP ADDRESSES
+   ## CREATE ELASTIC IP ADDRESSES
 
   * I created 3 Elastic IPS .
       
    ![Elastic-IP](Images/Elastic-IP.JPG)
       
- ## CREATE NAT GATEWAY
+  ## CREATE NAT GATEWAY
 
  * I configured a NAT Gateway for connectivity to the internet
  * An elastic IP address was attached to this NAT Gateway at creation.
@@ -52,12 +53,12 @@
 
     ![NAT](Images/NAT.JPG)
 
-    ## SECTION 2 - SET UP OF THE SECURITY 
+  ## SECTION 2 - SET UP OF THE SECURITY 
 
-     ## CREATE SECURITY GROUP
-     ## 1. Nginx Server
-     * Traffic will only be allowed from external load balancer from port 80 and 443 
-      * It will allow SSH access from our Bastion
+  ## CREATE SECURITY GROUP
+  ## 1. Nginx Server
+   * Traffic will only be allowed from external load balancer from port 80 and 443 
+  * It will allow SSH access from our Bastion
 
        
   ![NginxSG](Images/Nginx-SG.JPG)
@@ -154,6 +155,8 @@
 
    [NGINX AMI INSTALL]
 
+   
+```
    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
    yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
@@ -164,15 +167,20 @@
 
    systemctl enable chronyd
 
+```
+
    * Configure selinux policies for the nginx server
    
+ ```
     setsebool -P httpd_can_network_connect=1
     setsebool -P httpd_can_network_connect_db=1
     setsebool -P httpd_execmem=1
     setsebool -P httpd_use_nfs 1
+```
 
    * Install  amazon efs utils for mounting the target on the Elastic file system
 
+   ```
      git clone https://github.com/aws/efs-utils
 
      cd efs-utils
@@ -182,11 +190,14 @@
      yum install -y rpm-build
 
      make rpm
-
+  
      yum install -y ./build/amazon-efs-utils*rpm
 
-     [Certificate for nginx]
+  ```
 
+     [Certificate for nginx]
+     
+   ```
       sudo mkdir /etc/ssl/private
 
       sudo chmod 700 /etc/ssl/private
@@ -194,9 +205,11 @@
       openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/ACS.key -out /etc/ssl/certs/ACS.crt
 
       sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+    ```
 
       [BASTION]
 
+    ```
       yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
       yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
@@ -207,41 +220,49 @@
 
       systemctl enable chronyd
 
-
+   ```
 
       [WEBSERVER INSTALL]
 
+     ```
       yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
       yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
 
-       yum install wget vim python3 telnet htop git mysql net-tools chrony -y
+      yum install wget vim python3 telnet htop git mysql net-tools chrony -y
 
-       systemctl start chronyd
+      systemctl start chronyd
 
-       systemctl enable chronyd
-
+      systemctl enable chronyd
+      
+     ```
          * Install  amazon efs utils for mounting the target on the Elastic file system
 
-       git clone https://github.com/aws/efs-utils
+      ```
+      git clone https://github.com/aws/efs-utils
 
-        cd efs-utils
+       cd efs-utils
 
-        yum install -y make
+      yum install -y make
  
-        yum install -y rpm-build
+      yum install -y rpm-build
   
-         make rpm
+      make rpm
 
-         yum install -y ./build/amazon-efs-utils*rpm
+      yum install -y ./build/amazon-efs-utils*rpm
+      
+      ```
 
          * Self Assigned Certificate for Webserver
 
+       ```
          yum install -y mod_ssl
 
         openssl req -newkey rsa:2048 -nodes -keyout /etc/pki/tls/private/ACS.key -x509 -days 365 -out /etc/pki/tls/certs/ACS.crt
 
-         vi /etc/httpd/conf.d/ssl.conf
+        ```
+
+         `vi /etc/httpd/conf.d/ssl.conf`
 
          * In the sssl.conf, i edited the localhost.crt and localhost.key to ACS.crt and ACS.key respectively
  
@@ -249,6 +270,7 @@
    [BASTION CONFIGURATION]
 
    
+  ```
    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
    yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
@@ -258,14 +280,15 @@
    systemctl start chronyd
 
    systemctl enable chronyd
+```
 
-       ## SECTION 6 - Create AMI's from the instances
+  ## SECTION 6 - Create AMI's from the instances
 
       * I created AMI for each of thr instances
    
  ![Nginx-AMI](Images/Nginx-AMI.JPG)
 
-        ## SECTION 7 - Create Target Group
+  ## SECTION 7 - Create Target Group
 
      Created traget groups Nginx and the servers behind the loadbalance [Tooling and Wordpress]
      * Below is the configuration.
@@ -333,60 +356,65 @@
  
            - userdata:
 
+        ```
            #!/bin/bash 
           yum install -y mysql 
           yum install -y git tmux 
           yum install -y ansible
+        ```
 
-          ## Nginx Launch Template
+      ## Nginx Launch Template
 
-          * Name: Nginx Template
+   * Name: Nginx Template
 
-         * Description: Template for Nginx
-
-         * Application and OS Images: Nginx AMI
-
-         * Instance type: t2.micro
-
-         * Key-Pair: My Keypair
-
-         * ADD NETWORK INTERFACE
-
-           - Subnet:acme-public-subnet-1
-
-           - security group: Nginx-sg
-
-           - Auto-assign public IP: enable
+   * Description: Template for Nginx
  
-           - userdata:
+   * Application and OS Images: Nginx AMI
 
-           #!/bin/bash
-yum install -y nginx
-systemctl start nginx
-systemctl enable nginx
-git clone https://github.com/Mubarokahh/ACS-project-config.git
-mv/ACS-project-config/reverse.conf/etc/nginx/
-mv/etc/nginx/nginx.conf/etc/nginx/ngjnx.conf-distro
-cd /etc/nginx/
-touch nginx.conf
-sed -n 'w nginx.conf' reverse.conf
-systemctl restart nginx
-rm -rf reverse conf
-rm-rf /ACS-project-config
+   * Instance type: t2.micro
 
-            ## Wordpress Launch Template
+   * Key-Pair: My Keypair
 
-         * Name: Wordpress Template
+   * ADD NETWORK INTERFACE
 
-         * Description: Template for Nginx
+    - Subnet:acme-public-subnet-1
 
-         * Application and OS Images: Webserver AMI
+    - security group: Nginx-sg
 
-         * Instance type: t2.micro
+    - Auto-assign public IP: enable
+ 
+    - userdata:
 
-         * Key-Pair: My Keypair
+```
+   #!/bin/bash
+   yum install -y nginx
+   systemctl start nginx
+   systemctl enable nginx
+   git clone https://github.com/Mubarokahh/ACS-project-config.git
+   mv/ACS-project-config/reverse.conf/etc/nginx/
+   mv/etc/nginx/nginx.conf/etc/nginx/ngjnx.conf-distro
+   cd /etc/nginx/
+   touch nginx.conf
+   sed -n 'w nginx.conf' reverse.conf
+   systemctl restart nginx
+   rm -rf reverse conf
+   rm-rf /ACS-project-config
 
-         * ADD NETWORK INTERFACE
+```
+
+   ## Wordpress Launch Template
+
+      * Name: Wordpress Template
+
+      * Description: Template for Nginx
+
+      * Application and OS Images: Webserver AMI
+
+      * Instance type: t2.micro
+
+      * Key-Pair: My Keypair
+
+      * ADD NETWORK INTERFACE
 
            - Subnet:public-subnet-1
 
@@ -396,37 +424,42 @@ rm-rf /ACS-project-config
  
            - userdata:
 
+   ```
           #!/bin/bash
-mkdir /var/www/
-sudo mount -t efs -o tls,accesspoint=fsap-0d72026081d9edf04 fs-07af1f006986e6206:/  /var/www/
-yum install -y httpd 
-systemctl start httpd
-systemctl enable httpd
-yum module reset php -y
-yum module enable php:remi-7.4 -y
-yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
-systemctl start php-fpm
-systemctl enable php-fpm
-wget http://wordpress.org/latest.tar.gz
-tar xzvf latest.tar.gz
-rm -rf latest.tar.gz
-cp wordpress/wp-config-sample.php wordpress/wp-config.php
-mkdir /var/www/html/
-cp -R /wordpress/* /var/www/html/
-cd /var/www/html/
-touch healthstatus
-sed -i "s/localhost/mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com/g" wp-config.php 
-sed -i "s/username_here/admin/g" wp-config.php 
-sed -i "s/password_here/admin1234/g" wp-config.php 
-sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
-chcon -t httpd_sys_rw_content_t /var/www/html/ -R
-systemctl restart httpd
+    mkdir /var/www/
+    sudo mount -t efs -o tls,accesspoint=fsap-0d72026081d9edf04 fs-07af1f006986e6206:/  /var/www/
+    yum install -y httpd 
+    systemctl start httpd
+     systemctl enable httpd
+    yum module reset php -y
+     yum module enable php:remi-7.4 -y
+      yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+    systemctl start php-fpm
+    systemctl enable php-fpm
+    wget http://wordpress.org/latest.tar.gz
+    tar xzvf latest.tar.gz
+    rm -rf latest.tar.gz
+    cp wordpress/wp-config-sample.php wordpress/wp-config.php
+    mkdir /var/www/html/
+   cp -R /wordpress/* /var/www/html/
+    cd /var/www/html/
+   touch healthstatus
+    sed -i "s/localhost/mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com/g" wp-config.php 
+   sed -i "s/username_here/admin/g" wp-config.php 
+   sed -i "s/password_here/admin1234/g" wp-config.php 
+   sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
+   chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+   systemctl restart httpd
 
-   ## NOTE
+``` 
+
+
+
+  ## NOTE
 
    To get the accesspoint included in the meta data above, we musts go to our AWS file system > Access points > click on attach and copy the EFS mount helper code for wordpress
    
-   sudo mount -t efs -o tls,accesspoint=fsap-036c167cd4f5a3353 fs-07af1f006986e6206:/ efs
+   `sudo mount -t efs -o tls,accesspoint=fsap-036c167cd4f5a3353 fs-07af1f006986e6206:/ efs`
 
    ## Tooling Launch Template
 
@@ -448,8 +481,8 @@ systemctl restart httpd
  
            - userdata:
 
-   mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com
 
+```
    #!/bin/bash
 mkdir /var/www/
 sudo mount -t efs -o tls,accesspoint=fsap-036c167cd4f5a3353 fs-07af1f006986e6206:/  /var/www/
@@ -476,6 +509,7 @@ sed -i "s/database_name_here/wordpressdb/g" wp-config.php
 chcon -t httpd_sys_rw_content_t /var/www/html/ -R
 systemctl restart httpd
 
+```
   ![Template](Images/Template.JPG)
 
    ## SECTION 8- CONFIGURE AutoScaling Group
@@ -484,66 +518,67 @@ systemctl restart httpd
 
     Name: Nginx-ASG
 
-Launch template: Nginxtemplate
+    Launch template: Nginxtemplate
 
-adhere to launch template: selected (default)
+   adhere to launch template: selected (default)
 
-VPC: myvpc
+   VPC: myvpc
 
-Subnet: Public subnet 1 and Public subnet 2
+     Subnet: Public subnet 1 and Public subnet 2
 
- Attach to an existing load balancer: Choose from your load balancer target groupsHealth checks:
+     Attach to an existing load balancer: Choose from your load balancer target groupsHealth checks:
 
-check ELB health check
+    check ELB health check
 
-Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+    Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
 
-Scaling Policy > Target tracking scaling policy
+    Scaling Policy > Target tracking scaling policy
 
-Metric Type: Average CPU Utilization
+    Metric Type: Average CPU Utilization
 
-Target: 90
+   Target: 90
 
-Add a topic: Bastion-notification
+   Add a topic: Bastion-notification
 
 
-Click create autoscaling group
+   Click create autoscaling group
 
 
    [BASTION AUTO SCALING GROUP]
 
    Name: Bastion-ASG
 
-Launch template: acme-bastion-template
+  Launch template: acme-bastion-template
 
-adhere to launch template: selected (default)
+  adhere to launch template: selected (default)
 
-VPC: myvpc
+   VPC: myvpc
 
-Subnet: Public subnet 1 and Public subnet 2
+  Subnet: Public subnet 1 and Public subnet 2
 
-No load balancer selected(default)
+  No load balancer selected(default)
 
-check ELB health check
+  check ELB health check
 
-Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+  Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
 
-Scaling Policy > Target tracking scaling policy
+   Scaling Policy > Target tracking scaling policy
 
-Metric Type: Average CPU Utilization
+   Metric Type: Average CPU Utilization
 
-Target: 90
+   Target: 90
 
-Add a topic: Nginx-notification
+   Add a topic: Nginx-notification
 
-Click create autoscaling group
+   Click create autoscaling group
 
   ## NOTE
+  
      Before creating the wordpress ASG, I will go into the bastion to create the wordpress database and tooling dtabase with RDS endpoint
 
-      [TOOLING AUTO SCALING GROUP]
+ *  TOOLING AUTO SCALING GROUP
 
-       Name: Tooling-ASG
+  Name: Tooling-ASG
 
 Launch template:Tooling-template
 
@@ -565,13 +600,11 @@ Metric Type: Average CPU Utilization
 
 Target: 90
 
-
-
 Click create autoscaling group
 
-    [TOOLING AUTO SCALING GROUP]
+* WORDPRESS AUTO SCALING GROUP
       
-       Name: Tooling-ASG
+ Name: Wordpress-ASG
 
 Launch template:Wordpress-template
 
@@ -598,41 +631,14 @@ Add a topic: Wordpress-notification
 Click create autoscaling group
 
 
-
-![]()
-
-
    ## SECTION 9 - CREATE RECORDS FOR OUR LOAD BALANCERS
 
    * ROUTE 53 > Hosted zones>workachoo.com > create record
    * Aliases;yes
 
 ![Subdomain](Images/Subdomain.JPG)
-![]()
 
-![]()
-![]()![]()
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
-![]() 
+
 
 
 
