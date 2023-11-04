@@ -638,6 +638,12 @@ Click create autoscaling group
 
 ![Subdomain](Images/Subdomain.JPG)
 
+![image](https://github.com/Mubarokahh/AWS-CLOUD-SOLUTION-REVERSE-PROXY/assets/135038657/892e9103-b857-48f3-ab76-5afd571c9fe4)
+
+![image](https://github.com/Mubarokahh/AWS-CLOUD-SOLUTION-REVERSE-PROXY/assets/135038657/00e986c6-3a17-451b-bbfd-2e1fb9a225fe)
+
+
+
 
 
 
