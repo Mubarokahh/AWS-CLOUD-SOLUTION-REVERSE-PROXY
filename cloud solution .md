@@ -308,8 +308,306 @@
      * Route traffic coming from the nginx server into the internal loadbalancer by sending traffic to the respective target group based on the url being requested by the user.This should be done for both tooling and wordpress servers.
 
          ![Listenerrule](Images/Listenerrule.JPG)
+
+         ## SECTION 7 - LAUNCH TEMPLATE
+
+         ## Bastion Launch Template
+
+         * Name: Bastion Template
+
+         * Description: Template for bastion
+
+         * Application and OS Images: Bastion AMI
+
+         * Instance type: t2.micro
+
+         * Key-Pair: My Keypair
+
+         * ADD NETWORK INTERFACE
+
+           - Subnet:acme-public-subnet-1
+
+           - security group: bastion-sg
+
+           - Auto-assign public IP: enable
+ 
+           - userdata:
+
+           #!/bin/bash 
+          yum install -y mysql 
+          yum install -y git tmux 
+          yum install -y ansible
+
+          ## Nginx Launch Template
+
+          * Name: Nginx Template
+
+         * Description: Template for Nginx
+
+         * Application and OS Images: Nginx AMI
+
+         * Instance type: t2.micro
+
+         * Key-Pair: My Keypair
+
+         * ADD NETWORK INTERFACE
+
+           - Subnet:acme-public-subnet-1
+
+           - security group: Nginx-sg
+
+           - Auto-assign public IP: enable
+ 
+           - userdata:
+
+           #!/bin/bash
+yum install -y nginx
+systemctl start nginx
+systemctl enable nginx
+git clone https://github.com/Mubarokahh/ACS-project-config.git
+mv/ACS-project-config/reverse.conf/etc/nginx/
+mv/etc/nginx/nginx.conf/etc/nginx/ngjnx.conf-distro
+cd /etc/nginx/
+touch nginx.conf
+sed -n 'w nginx.conf' reverse.conf
+systemctl restart nginx
+rm -rf reverse conf
+rm-rf /ACS-project-config
+
+            ## Wordpress Launch Template
+
+         * Name: Wordpress Template
+
+         * Description: Template for Nginx
+
+         * Application and OS Images: Webserver AMI
+
+         * Instance type: t2.micro
+
+         * Key-Pair: My Keypair
+
+         * ADD NETWORK INTERFACE
+
+           - Subnet:public-subnet-1
+
+           - security group: Webserver-sg
+
+           - Auto-assign public IP: disable
+ 
+           - userdata:
+
+          #!/bin/bash
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-0d72026081d9edf04 fs-07af1f006986e6206:/  /var/www/
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+systemctl start php-fpm
+systemctl enable php-fpm
+wget http://wordpress.org/latest.tar.gz
+tar xzvf latest.tar.gz
+rm -rf latest.tar.gz
+cp wordpress/wp-config-sample.php wordpress/wp-config.php
+mkdir /var/www/html/
+cp -R /wordpress/* /var/www/html/
+cd /var/www/html/
+touch healthstatus
+sed -i "s/localhost/mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com/g" wp-config.php 
+sed -i "s/username_here/admin/g" wp-config.php 
+sed -i "s/password_here/admin1234/g" wp-config.php 
+sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+
+   ## NOTE
+
+   To get the accesspoint included in the meta data above, we musts go to our AWS file system > Access points > click on attach and copy the EFS mount helper code for wordpress
+   
+   sudo mount -t efs -o tls,accesspoint=fsap-036c167cd4f5a3353 fs-07af1f006986e6206:/ efs
+
+   ## Tooling Launch Template
+
+         
+
+         * Application and OS Images: Webserver AMI
+
+         * Instance type: t2.micro
+
+         * Key-Pair: My Keypair
+
+         * ADD NETWORK INTERFACE
+
+           - Subnet:public-subnet-1
+
+           - security group: Webserver-sg
+
+           - Auto-assign public IP: enable
+ 
+           - userdata:
+
+   mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com
+
+   #!/bin/bash
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-036c167cd4f5a3353 fs-07af1f006986e6206:/  /var/www/
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+systemctl start php-fpm
+systemctl enable php-fpm
+wget http://wordpress.org/latest.tar.gz
+tar xzvf latest.tar.gz
+rm -rf latest.tar.gz
+cp wordpress/wp-config-sample.php wordpress/wp-config.php
+mkdir /var/www/html/
+cp -R /wordpress/* /var/www/html/
+cd /var/www/html/
+touch healthstatus
+sed -i "s/localhost/mbaroka-db.ctzutolm3olz.us-east-1.rds.amazonaws.com/g" wp-config.php 
+sed -i "s/username_here/admin/g" wp-config.php 
+sed -i "s/password_here/admin1234/g" wp-config.php 
+sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+
+  ![Template](Images/Template.JPG)
+
+   ## SECTION 8- CONFIGURE AutoScaling Group
+
+   [NGINX AUTO SCALING GROUP]
+
+    Name: Nginx-ASG
+
+Launch template: Nginxtemplate
+
+adhere to launch template: selected (default)
+
+VPC: myvpc
+
+Subnet: Public subnet 1 and Public subnet 2
+
+ Attach to an existing load balancer: Choose from your load balancer target groupsHealth checks:
+
+check ELB health check
+
+Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+
+Scaling Policy > Target tracking scaling policy
+
+Metric Type: Average CPU Utilization
+
+Target: 90
+
+Add a topic: Bastion-notification
+
+
+Click create autoscaling group
+
+
+   [BASTION AUTO SCALING GROUP]
+
+   Name: Bastion-ASG
+
+Launch template: acme-bastion-template
+
+adhere to launch template: selected (default)
+
+VPC: myvpc
+
+Subnet: Public subnet 1 and Public subnet 2
+
+No load balancer selected(default)
+
+check ELB health check
+
+Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+
+Scaling Policy > Target tracking scaling policy
+
+Metric Type: Average CPU Utilization
+
+Target: 90
+
+Add a topic: Nginx-notification
+
+Click create autoscaling group
+
+  ## NOTE
+     Before creating the wordpress ASG, I will go into the bastion to create the wordpress database and tooling dtabase with RDS endpoint
+
+      [TOOLING AUTO SCALING GROUP]
+
+       Name: Tooling-ASG
+
+Launch template:Tooling-template
+
+adhere to launch template: selected (default)
+
+VPC: myvpc
+
+Subnet: Public subnet 1 and Public subnet 2
+
+No load balancer selected(default)
+
+check ELB health check
+
+Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+
+Scaling Policy > Target tracking scaling policy
+
+Metric Type: Average CPU Utilization
+
+Target: 90
+
+
+
+Click create autoscaling group
+
+    [TOOLING AUTO SCALING GROUP]
+      
+       Name: Tooling-ASG
+
+Launch template:Wordpress-template
+
+adhere to launch template: selected (default)
+
+VPC: myvpc
+
+Subnet: Public subnet 1 and Public subnet 2
+
+No load balancer selected(default)
+
+check ELB health check
+
+Group size: leave all at 1 for now Desired 1 Minimum 1 Maximum 1
+
+Scaling Policy > Target tracking scaling policy
+
+Metric Type: Average CPU Utilization
+
+Target: 90
+
+Add a topic: Wordpress-notification
+
+Click create autoscaling group
+
+
+
 ![]()
-![]()
+
+
+   ## SECTION 9 - CREATE RECORDS FOR OUR LOAD BALANCERS
+
+   * ROUTE 53 > Hosted zones>workachoo.com > create record
+   * Aliases;yes
+
+![Subdomain](Images/Subdomain.JPG)
 ![]()
 
 ![]()
